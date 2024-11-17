@@ -13,9 +13,10 @@ import androidx.core.content.ContextCompat
 import com.bpareja.pomodorotec.pomodoro.PomodoroScreen
 import com.bpareja.pomodorotec.pomodoro.PomodoroViewModel
 import androidx.activity.viewModels
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.bpareja.pomodorotec.settings.SettingsScreen
 
 
@@ -26,21 +27,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.resetToDefaultDurations() // Restablecer valores
+
         setContent {
-            val navController = rememberNavController()
-            NavHost(navController = navController, startDestination = "pomodoro_screen") {
-                // Pantalla principal (Pomodoro)
-                composable("pomodoro_screen") {
-                    PomodoroScreen(
-                        viewModel = viewModel,
-                        onSettingsClick = { navController.navigate("settings_screen") }
-                    )
-                }
-                // Pantalla de configuración
-                composable("settings_screen") {
-                    SettingsScreen(
-                        onBackClick = { navController.popBackStack() } // Volver a la pantalla anterior
-                    )
+            var showSettings by remember { mutableStateOf(false) }
+
+            if (showSettings) {
+                SettingsScreen(
+                    onBackClick = { showSettings = false },
+                    onSaveClick = { sessionMinutes, breakMinutes ->
+                        viewModel.updateDurations(sessionMinutes, breakMinutes) // Guardar y actualizar
+                    }
+                )
+            } else {
+                PomodoroScreen(viewModel) {
+                    showSettings = true
                 }
             }
         }
