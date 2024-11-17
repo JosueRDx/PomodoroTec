@@ -13,6 +13,10 @@ import androidx.core.content.ContextCompat
 import com.bpareja.pomodorotec.pomodoro.PomodoroScreen
 import com.bpareja.pomodorotec.pomodoro.PomodoroViewModel
 import androidx.activity.viewModels
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.bpareja.pomodorotec.settings.SettingsScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -23,15 +27,28 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            PomodoroScreen(viewModel)
+            val navController = rememberNavController()
+            NavHost(navController = navController, startDestination = "pomodoro_screen") {
+                // Pantalla principal (Pomodoro)
+                composable("pomodoro_screen") {
+                    PomodoroScreen(
+                        viewModel = viewModel,
+                        onSettingsClick = { navController.navigate("settings_screen") }
+                    )
+                }
+                // Pantalla de configuración
+                composable("settings_screen") {
+                    SettingsScreen(
+                        onBackClick = { navController.popBackStack() } // Volver a la pantalla anterior
+                    )
+                }
+            }
         }
         // Crear el canal de notificaciones
         createNotificationChannel()
         // Solicitar permiso para notificaciones en Android 13+
         requestNotificationPermission()
-
-        }
-
+    }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
