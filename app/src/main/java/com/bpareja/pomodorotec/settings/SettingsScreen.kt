@@ -11,10 +11,10 @@ import androidx.compose.ui.unit.dp
 import com.bpareja.pomodorotec.utils.PreferencesManager
 
 @Composable
-fun SettingsScreen(onBackClick: () -> Unit) {
+fun SettingsScreen(onBackClick: () -> Unit, onSaveClick: (Int, Int) -> Unit) {
     val preferencesManager = PreferencesManager(LocalContext.current)
-    val sessionDuration = remember { mutableStateOf(preferencesManager.getSessionDuration()) }
-    val breakDuration = remember { mutableStateOf(preferencesManager.getBreakDuration()) }
+    var sessionDuration by remember { mutableStateOf(preferencesManager.getSessionDuration().toString()) }
+    var breakDuration by remember { mutableStateOf(preferencesManager.getBreakDuration().toString()) }
 
     Column(
         modifier = Modifier
@@ -25,8 +25,8 @@ fun SettingsScreen(onBackClick: () -> Unit) {
         // Configurar duración de la sesión
         Text("Duración de la sesión (minutos):")
         TextField(
-            value = sessionDuration.value.toString(),
-            onValueChange = { sessionDuration.value = it.toIntOrNull() ?: sessionDuration.value },
+            value = sessionDuration,
+            onValueChange = { sessionDuration = it.filter { char -> char.isDigit() } },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -35,8 +35,8 @@ fun SettingsScreen(onBackClick: () -> Unit) {
         // Configurar duración del descanso
         Text("Duración del descanso (minutos):")
         TextField(
-            value = breakDuration.value.toString(),
-            onValueChange = { breakDuration.value = it.toIntOrNull() ?: breakDuration.value },
+            value = breakDuration,
+            onValueChange = { breakDuration = it.filter { char -> char.isDigit() } },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -48,8 +48,9 @@ fun SettingsScreen(onBackClick: () -> Unit) {
                 Text("Volver")
             }
             Button(onClick = {
-                preferencesManager.setSessionDuration(sessionDuration.value)
-                preferencesManager.setBreakDuration(breakDuration.value)
+                val sessionMinutes = sessionDuration.toIntOrNull() ?: 25
+                val breakMinutes = breakDuration.toIntOrNull() ?: 5
+                onSaveClick(sessionMinutes, breakMinutes)
                 onBackClick()
             }) {
                 Text("Guardar")
