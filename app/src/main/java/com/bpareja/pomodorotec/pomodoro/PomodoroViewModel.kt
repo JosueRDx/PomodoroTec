@@ -77,6 +77,34 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
         startTimer()
     }
 
+    // Función para recargar configuraciones desde las preferencias
+    fun reloadDurations() {
+        sessionDurationInMillis = preferencesManager.getSessionDuration() * 60 * 1000L
+        breakDurationInMillis = preferencesManager.getBreakDuration() * 60 * 1000L
+        if (_currentPhase.value == Phase.FOCUS) {
+            timeRemainingInMillis = sessionDurationInMillis
+            _timeLeft.value = formatTime(sessionDurationInMillis)
+        } else {
+            timeRemainingInMillis = breakDurationInMillis
+            _timeLeft.value = formatTime(breakDurationInMillis)
+        }
+    }
+
+    // Función para guardar configuraciones
+    fun updateDurations(sessionMinutes: Int, breakMinutes: Int) {
+        preferencesManager.setSessionDuration(sessionMinutes)
+        preferencesManager.setBreakDuration(breakMinutes)
+        pauseTimer() // Detener el temporizador
+        reloadDurations() // Reflejar inmediatamente
+    }
+
+    // Función para reiniciar a valores por defecto
+    fun resetToDefaultDurations() {
+        preferencesManager.setSessionDuration(25)
+        preferencesManager.setBreakDuration(5)
+        reloadDurations()
+    }
+
     // Inicia o reanuda el temporizador
     fun startTimer() {
         countDownTimer?.cancel() // Cancela cualquier temporizador en ejecución antes de iniciar uno nuevo
