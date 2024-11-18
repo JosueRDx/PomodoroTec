@@ -13,6 +13,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.bpareja.pomodorotec.MainActivity
+import com.bpareja.pomodorotec.PomodoroReceiver
 import com.bpareja.pomodorotec.R
 
 enum class Phase {
@@ -25,9 +26,11 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     }
 
     companion object {
-        private var instance: PomodoroViewModel? = null
+        var instance: PomodoroViewModel? = null // Cambiado a público
+            private set // Evitar que otros puedan modificarla directamente
+
         fun skipBreak() {
-            instance?.startFocusSession()  // Saltar el descanso y comenzar sesión de concentración
+            instance?.startFocusSession() // Saltar el descanso
         }
     }
 
@@ -111,25 +114,40 @@ class PomodoroViewModel(application: Application) : AndroidViewModel(application
     // Muestra la notificación personalizada
     private fun showNotification(title: String, message: String) {
         val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT // Reabrir la actividad si ya está en el stack
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT // Reabre la actividad si ya está en el stack
         }
         val pendingIntent: PendingIntent = PendingIntent.getActivity(
             context, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Color para la notificación según la fase (rojo para concentración, verde para descanso)
-        val notificationColor = if (_currentPhase.value == Phase.FOCUS) 0xFFFF0000.toInt() else 0xFF00FF00.toInt()
-        val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION) // Sonido predeterminado
+        // Determinar el ícono dinámico según la fase
+        val smallIcon = if (_currentPhase.value == Phase.FOCUS) R.drawable.focus else R.drawable.resource_break
 
+        // Crear las acciones interactivas
+        val skipBreakIntent = Intent(context, PomodoroReceiver::class.java).apply {
+            action = "SKIP_BREAK"
+        }
+        val skipBreakPendingIntent: PendingIntent = PendingIntent.getBroadcast(
+            context, 0, skipBreakIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val pauseIntent = Intent(context, PomodoroReceiver::class.java).apply {
+            action = "PAUSE_TIMER"
+        }
+        val pausePendingIntent: PendingIntent = PendingIntent.getBroadcast(
+            context, 1, pauseIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Construir la notificación
         val builder = NotificationCompat.Builder(context, MainActivity.CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Ícono personalizado
+            .setSmallIcon(smallIcon) // Ícono dinámico
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)  // Usar el PendingIntent configurado
+            .setContentIntent(pendingIntent) // Acceso rápido a la actividad principal
             .setAutoCancel(true)
-            .setColor(notificationColor) // Color de la notificación
-            .setSound(soundUri) // Sonido para la notificación
+            .addAction(R.drawable.ic_skip, "Saltar descanso", skipBreakPendingIntent)
+            .addAction(R.drawable.ic_skip, "Pausar", pausePendingIntent) // Reutilizando el ícono de "skip" para "pausa"
 
         with(NotificationManagerCompat.from(context)) {
             if (ActivityCompat.checkSelfPermission(

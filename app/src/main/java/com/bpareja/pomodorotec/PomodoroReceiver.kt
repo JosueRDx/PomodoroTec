@@ -8,8 +8,9 @@ import com.bpareja.pomodorotec.pomodoro.PomodoroViewModel
 
 class PomodoroReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == "SKIP_BREAK") {
-            PomodoroViewModel.skipBreak() // Esto debería llamar a startFocusSession y restablecer el tiempo de enfoque
+        when (intent.action) {
+            "SKIP_BREAK" -> PomodoroViewModel.skipBreak() // Saltar el descanso
+            "PAUSE_TIMER" -> PomodoroViewModel.instance?.pauseTimer() // Pausar el temporizador
         }
     }
 }
